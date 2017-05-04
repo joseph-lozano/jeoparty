@@ -1,0 +1,29 @@
+<h1> GAMES </h1>
+<table class="table">
+  <thead>
+    <tr>
+      <th>Game ID</th>
+      <th>Show Number</th>
+      <th>Air Date</th>
+      <th>Go</th>
+    </tr>
+  </thead>
+  <tbody>
+    <%= for game <- @games do %>
+      <tr>
+        <td>
+          <%= game.id %>
+        </td>
+        <td>
+          <%= game.show_number %>
+        </td>
+        <td>
+          <%= game.air_date %>
+        </td>
+        <td>
+          <%= button("Go", to: "/#{game.id}", method: "get", class: "btn btn-success") %>
+        </td>
+      </tr>
+    <%= end %>
+  </tbody>
+</table>

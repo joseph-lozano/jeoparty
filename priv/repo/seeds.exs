@@ -3,7 +3,7 @@ NimbleCSV.define(Parser, separator: ",", escape: "\"")
 
 File.stream!("./assets/jeopardy_clues.csv")
 |> Parser.parse_stream
-|> Stream.each(fn([show_number, air_date, round, category, value, question, answer]) ->
+|> Stream.each(fn([show_number, air_date, round, category, value, clue, correct_response]) ->
   show_number  = show_number |> String.to_integer
 
   dates = air_date
@@ -32,14 +32,13 @@ File.stream!("./assets/jeopardy_clues.csv")
   {:ok, game} = Games.create_game(%{show_number: show_number, air_date: air_date})
 
   attrs = %{}
-  |> Map.put(:round,       round)
-  |> Map.put(:category,    category)
-  |> Map.put(:value,       value)
-  |> Map.put(:question,    question)
-  |> Map.put(:answer,      answer)
-  |> Map.put(:game_id,     game.id)
+  |> Map.put(:round,            round)
+  |> Map.put(:category,         category)
+  |> Map.put(:value,            value)
+  |> Map.put(:clue,             clue)
+  |> Map.put(:correct_response, correct_response)
+  |> Map.put(:game_id,          game.id)
 
-  IO.inspect attrs
-  {:ok, clue} =  Games.create_clue(attrs)
+  {:ok, _clue} =  Games.create_clue(attrs)
 end)
 |> Stream.run

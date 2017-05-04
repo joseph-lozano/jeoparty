@@ -10,22 +10,25 @@ defmodule Jeoparty.Games do
   alias Jeoparty.Games.Game
 
   def get_clues(game_id) do
-    query = from c in Clue,
-      where: c.show_number == 4680 and c.show_number == ^game_id
+    key = "clues_#{game_id}"
+    ConCache.get_or_store(:jeoparty_cache, key, fn() ->
+      query = from c in Clue,
+        where: c.game_id == ^game_id
 
-    Repo.all(query)
-    |> Enum.group_by(fn(el) -> el.round end)
-    |> Enum.reduce(%{single: %{}, double: %{}, final: %{}, tiebreaker: %{}}, fn({round, clues}, acc) ->
-      case round do
-        1 ->
-          put_in(acc, [:single], Enum.group_by(clues, fn(x) -> x.category end))
-        2 ->
-          put_in(acc, [:double], Enum.group_by(clues, fn(x) -> x.category end))
-        3 ->
-          put_in(acc, [:final], Enum.group_by(clues, fn(x) -> x.category end))
-        4 ->
-          put_in(acc, [:tiebreaker], Enum.group_by(clues, fn(x) -> x.category end))
-      end
+      Repo.all(query)
+      |> Enum.group_by(fn(el) -> el.round end)
+      |> Enum.reduce(%{single: %{}, double: %{}, final: %{}, tiebreaker: %{}}, fn({round, clues}, acc) ->
+        case round do
+          1 ->
+            put_in(acc, [:single], Enum.group_by(clues, fn(x) -> x.category end))
+          2 ->
+            put_in(acc, [:double], Enum.group_by(clues, fn(x) -> x.category end))
+          3 ->
+            put_in(acc, [:final], Enum.group_by(clues, fn(x) -> x.category end))
+          4 ->
+            put_in(acc, [:tiebreaker], Enum.group_by(clues, fn(x) -> x.category end))
+        end
+      end)
     end)
   end
 
@@ -112,8 +115,8 @@ defmodule Jeoparty.Games do
 
   defp clue_changeset(%Clue{} = clue, attrs) do
     clue
-    |> cast(attrs, [:round, :category, :value, :question, :answer])
-    |> validate_required([:round, :category, :value, :question, :answer])
+    |> cast(attrs, [:round, :category, :value, :clue, :correct_response, :game_id])
+    |> validate_required([:round, :category, :value, :clue, :correct_response])
   end
 
   alias Jeoparty.Games.Game
@@ -128,7 +131,10 @@ defmodule Jeoparty.Games do
 
   """
   def list_games do
-    Repo.all(Game)
+    ConCache.get_or_store(:jeoparty_cache, "all_games", fn() -> 
+      IO.puts "INSIDE CACHE"
+      Repo.all(Game)
+    end)
   end
 
   @doc """
@@ -145,7 +151,11 @@ defmodule Jeoparty.Games do
       ** (Ecto.NoResultsError)
 
   """
-  def get_game!(id), do: Repo.get!(Game, id)
+  def get_game!(id) do
+    ConCache.get_or_store(:jeoparty_cache, "game_#{id}", fn() ->
+      Repo.get!(Game, id)
+    end)
+  end
 
   @doc """
   Creates a game.

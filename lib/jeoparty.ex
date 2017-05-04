@@ -12,6 +12,7 @@ defmodule Jeoparty do
       supervisor(Jeoparty.Repo, []),
       # Start the endpoint when the application starts
       supervisor(Jeoparty.Web.Endpoint, []),
+      supervisor(ConCache, [[], [name: :jeoparty_cache]]),
       # Start your own worker by calling: Jeoparty.Worker.start_link(arg1, arg2, arg3)
       # worker(Jeoparty.Worker, [arg1, arg2, arg3]),
     ]
