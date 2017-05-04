@@ -16,7 +16,7 @@ defmodule Jeoparty.Web.Router do
   scope "/", Jeoparty.Web do
     pipe_through :browser # Use the default browser stack
 
-    get "/", PageController, :index
+    get "/", GameController, :index
   end
 
   # Other scopes may use custom stacks.

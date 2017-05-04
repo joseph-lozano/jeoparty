@@ -7,18 +7,26 @@ defmodule Jeoparty.Games do
   alias Jeoparty.Repo
 
   alias Jeoparty.Games.Clue
+  alias Jeoparty.Games.Game
 
-  @doc """
-  Returns the list of clues.
+  def get_clues(game_id) do
+    query = from c in Clue,
+      where: c.show_number == 4680 and c.show_number == ^game_id
 
-  ## Examples
-
-      iex> list_clues()
-      [%Clue{}, ...]
-
-  """
-  def list_clues do
-    Repo.all(Clue)
+    Repo.all(query)
+    |> Enum.group_by(fn(el) -> el.round end)
+    |> Enum.reduce(%{single: %{}, double: %{}, final: %{}, tiebreaker: %{}}, fn({round, clues}, acc) ->
+      case round do
+        1 ->
+          put_in(acc, [:single], Enum.group_by(clues, fn(x) -> x.category end))
+        2 ->
+          put_in(acc, [:double], Enum.group_by(clues, fn(x) -> x.category end))
+        3 ->
+          put_in(acc, [:final], Enum.group_by(clues, fn(x) -> x.category end))
+        4 ->
+          put_in(acc, [:tiebreaker], Enum.group_by(clues, fn(x) -> x.category end))
+      end
+    end)
   end
 
   @doc """
@@ -104,7 +112,113 @@ defmodule Jeoparty.Games do
 
   defp clue_changeset(%Clue{} = clue, attrs) do
     clue
-    |> cast(attrs, [:show_number, :air_date, :round, :category, :value, :question, :answer])
-    |> validate_required([:show_number, :air_date, :round, :category, :value, :question, :answer])
+    |> cast(attrs, [:round, :category, :value, :question, :answer])
+    |> validate_required([:round, :category, :value, :question, :answer])
+  end
+
+  alias Jeoparty.Games.Game
+
+  @doc """
+  Returns the list of games.
+
+  ## Examples
+
+      iex> list_games()
+      [%Game{}, ...]
+
+  """
+  def list_games do
+    Repo.all(Game)
+  end
+
+  @doc """
+  Gets a single game.
+
+  Raises `Ecto.NoResultsError` if the Game does not exist.
+
+  ## Examples
+
+      iex> get_game!(123)
+      %Game{}
+
+      iex> get_game!(456)
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_game!(id), do: Repo.get!(Game, id)
+
+  @doc """
+  Creates a game.
+
+  ## Examples
+
+      iex> create_game(%{field: value})
+      {:ok, %Game{}}
+
+      iex> create_game(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_game(attrs \\ %{}) do
+    game = Repo.get_by(Game, show_number: attrs.show_number) 
+    case game do
+      nil ->
+        %Game{} |> game_changeset(attrs) |> Repo.insert()
+      _ ->
+        {:ok, game}
+    end
+  end
+
+  @doc """
+  Updates a game.
+
+  ## Examples
+
+      iex> update_game(game, %{field: new_value})
+      {:ok, %Game{}}
+
+      iex> update_game(game, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def update_game(%Game{} = game, attrs) do
+    game
+    |> game_changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Deletes a Game.
+
+  ## Examples
+
+      iex> delete_game(game)
+      {:ok, %Game{}}
+
+      iex> delete_game(game)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def delete_game(%Game{} = game) do
+    Repo.delete(game)
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking game changes.
+
+  ## Examples
+
+      iex> change_game(game)
+      %Ecto.Changeset{source: %Game{}}
+
+  """
+  def change_game(%Game{} = game) do
+    game_changeset(game, %{})
+  end
+
+  defp game_changeset(%Game{} = game, attrs) do
+    game
+    |> cast(attrs, [:air_date, :show_number])
+    |> validate_required([:air_date, :show_number])
   end
 end
